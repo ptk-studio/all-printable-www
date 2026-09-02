@@ -1,94 +1,57 @@
-# All Printable
+# All Printable — home page
 
-Static, dependency-free printable generators. Everything renders in the
-browser and prints at true paper size.
+The marketing front door at **all-printable.com**. One page, plus redirects for
+everything that used to live here.
 
 ```
-docs/        the site — open docs/index.html, or serve the folder
-features/    product specs: what each printable does and why
-tools/       maintenance scripts (category and landing-page generation); output is committed
+docs/
+  index.html          the home page
+  404.html            points anything missing at the app
+  CNAME robots.txt sitemap.xml
+  assets/             the css, js and one preview image the page needs
+  <40 directories>    one-line redirect stubs, see below
 ```
 
-The site folder is named `docs/` because GitHub Pages can serve a project
-straight from `main` → `/docs` with no workflow or build step.
+The printables themselves — seven makers, six category pages, 26 landing pages
+and `/pro/` — live in **[all-printable-app-www]** and publish to
+**app.all-printable.com**. That repo holds the product specs (`features/`), the
+generators (`tools/`) and the Firestore rules.
+
+[all-printable-app-www]: https://github.com/ptk-studio/all-printable-app-www
+
+## The redirect stubs
+
+Forty directories here contain nothing but a redirect to the same path on
+`app.all-printable.com`. They exist because those URLs were indexed and linked:
+deleting them would have thrown away the search rankings the landing pages were
+built to earn.
+
+Each stub is a 200 response carrying `rel=canonical` to the new URL, an instant
+`meta refresh`, and a `location.replace` — the closest a GitHub Pages site can
+get to a 301, since it cannot set response headers. They also work with
+JavaScript off.
+
+They can be deleted once search engines have followed them and the traffic has
+moved, which takes months rather than weeks. Check Search Console before doing
+it.
+
+## Sign-in is not here
+
+A Firebase auth session belongs to one origin, so signing in on
+`all-printable.com` would leave you signed out on `app.all-printable.com`. The
+header's "Sign in" is a link to the app, where the real control lives.
+
+`all-printable.com` stays in the Firebase authorized-domains list anyway — drop
+it and the OAuth redirect breaks if this page ever needs auth again.
 
 ## Run it
 
-Any static server, or open the files directly:
+Any static server, or open `docs/index.html` directly:
 
 ```sh
-cd docs && python3 -m http.server 8777
-# → http://localhost:8777/
+cd docs && python3 -m http.server 8000
 ```
 
-There is no build step, no package manager and no dependencies. `docs/` can
-be deployed as-is to any static host.
-
-## What's here
-
-- **Calendar maker** (`docs/printables/calendar/`) — seven layouts, 18 paper
-  sizes, holidays for 42 countries computed for any year, moon phases, custom
-  events, 25 languages. See `features/calendar/README.md`.
-- **Paper & grids** (`docs/printables/paper/`) — graph, dot grid, ruled,
-  isometric, hexagon, music manuscript and handwriting sheets, drawn as vectors
-  at measured millimetre scale. See `features/paper/README.md`.
-- **Habit tracker** (`docs/printables/tracker/`) — habit trackers and chore
-  charts: month, weeks, or a numbered challenge. See `features/tracker/README.md`.
-- **Cards & labels** (`docs/printables/cards/`) — flashcards with correct
-  duplex alignment, gift tags, bookmarks, tent place cards and Avery-matched
-  address labels. See `features/cards/README.md`.
-- **Puzzles** (`docs/printables/puzzles/`) — sudoku with a guaranteed unique
-  solution, word searches, mazes and bingo, all seeded so a link reprints the
-  same puzzles. See `features/puzzles/README.md`.
-- **Forms & planners** (`docs/printables/forms/`) — budget sheets, packing
-  lists, meal plans and day planners, on the shared table engine. See
-  `features/forms/README.md`.
-- **Maths worksheets** (`docs/printables/worksheets/`) — times tables and drill
-  sheets with answer keys, plus the multiplication grid. See
-  `features/worksheets/README.md`.
-- **Catalogue** (`docs/index.html`) — driven by
-  `docs/assets/js/registry.js`; add an entry and a card appears.
-
-All seven run on the shared studio shell in `docs/assets/js/core/studio.js`,
-which owns state, controls, preview, printing and export. Sheet geometry for
-the small formats lives in `docs/assets/js/core/impose.js`, and rows-and-columns
-sheets are built from `docs/assets/js/core/table.js`.
-
-## Landing pages
-
-Each printable has its own indexable page at `/<slug>/`, generated from the
-registry and per-sheet copy:
-
-```sh
-cd docs && python3 -m http.server 8777 &
-node tools/build-previews.mjs     # photographs a real sheet per printable
-node tools/build-categories.mjs  # the six category pages
-node tools/build-landing.mjs     # landing pages, and the sitemap
-```
-
-Previews come from the generators themselves via a `?preview=1` mode, so the
-pictures cannot drift from what the site makes. The output is committed — the
-site stays buildless to serve. See `features/landing.md`.
-
-## Sheet credit
-
-Every printed sheet carries a small `all-printable.com` in the corner, stamped
-in one place (`core/brand.js`, applied from `core/studio.js`). Removing it is
-meant to become a paid feature; the seam is a single predicate. See
-`features/branding.md`.
-
-## Analytics
-
-Firebase / GA4, opt-in only: nothing loads and no cookie is set until a visitor
-agrees, and only interface choices are recorded — never the content of any
-field. See `features/analytics.md`.
-
-## Printing
-
-Choose **Print / Save PDF**, then in the browser dialog set scale to **100%**
-and margins to **None**. The sheet already carries its exact media size, so the
-browser must not rescale it.
-
-## Adding a printable
-
-See `features/README.md` and `features/platform.md`.
+The home page's category cards are rendered from `assets/js/registry.js`, which
+is still the catalogue's source of truth — it is duplicated in the app repo. If
+you add a printable there, the counts here go stale until you copy it across.

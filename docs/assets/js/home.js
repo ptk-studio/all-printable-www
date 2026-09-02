@@ -11,6 +11,10 @@
   var el = AP.el;
   var ART = AP.ART;
 
+  /* The catalogue lives on app.all-printable.com now; this page is the front
+     door. Category links are absolute because they cross to the other host. */
+  var APP = 'https://app.all-printable.com';
+
   /* The whole card is clickable via the stretched-link pattern, so the card is
      one target without nesting anchors — which is invalid HTML and breaks
      keyboard navigation. */
@@ -24,13 +28,13 @@
       el('div', { class: 'card-art', html: AP.svg('0 0 72 60', ART[cat.art] || ART.calendar) }),
       el('div', { class: 'card-body' }, [
         el('div', { class: 'card-title' }, [
-          el('a', { class: 'card-link', href: cat.slug + '/' },
+          el('a', { class: 'card-link', href: APP + '/' + cat.slug + '/' },
              [el('h3', { text: cat.label })])
         ]),
         el('p', { text: cat.blurb }),
         el('ul', {}, names.map(function (n) { return el('li', { text: n }); })
           .concat(rest > 0 ? [el('li', { class: 'more', text: 'and ' + rest + ' more' })] : [])),
-        el('a', { class: 'card-go', href: cat.slug + '/',
+        el('a', { class: 'card-go', href: APP + '/' + cat.slug + '/',
                   text: 'See all ' + live.length + ' →' })
       ])
     ]);
