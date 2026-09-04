@@ -1,4 +1,4 @@
-# all-printable — declared metrics
+# all-printable-www — declared metrics
 
 **What this product is trying to move.** Public on purpose: a metric nobody can see is a metric
 nobody can be held to.
@@ -26,8 +26,8 @@ Read off `docs/assets/js/core/analytics.js` and `docs/index.html` at `a666b6b`:
 |---|---|
 | Where it reports | Firebase / GA4, measurement id **`G-8KW8B8XRSJ`**, Firebase project `ptk-studio-allprintable` |
 | Whose property that is | **The same one the app reports into.** The `CONFIG` block is identical in both repos' `analytics.js`, checked on 2026-09-04. So both hosts land in one GA4 property and are told apart by hostname, or by the `maker` parameter |
-| What this host sends | **One event.** `page_view` with `maker: 'home'`, from `AP.analytics.init('home')` at the foot of `docs/index.html` |
-| What else sends anything | **Nothing.** Every link to the app is a plain `<a href>` with no handler; the 40 stubs and `docs/404.html` load no script at all |
+| What this host sends | **One kind of event.** `page_view` with `maker: 'home'`. **Not always from where you would expect:** `AP.analytics.init('home')` at the foot of `docs/index.html` sends it only when consent is already granted, so on a **first** visit the gate drops it and the event that lands comes from `setConsent(true)` when the visitor clicks **Allow**; on a return visit `init` is the path that fires. Every later re-grant through the privacy link fires another one |
+| What else sends anything | **Nothing.** Every link to the app is a plain `<a href>` with no handler. `docs/404.html` carries no script at all. **The 40 stubs do carry a script** — one inline line each, `location.replace(…)`, beside a `<meta http-equiv="refresh">`; **0 of 40 load anything external**, so no analytics runs on them and no arrival is recorded there. Counted in the tree on 2026-09-04: 40 of 40 |
 | Consent | **Opt-in.** `DEFAULT_ON = false`, and Do Not Track / Global Privacy Control are taken as a no without asking. Nothing is recorded until a visitor clicks **Allow** |
 
 **The consent gate is part of every definition below, not a footnote.** These numbers count
@@ -44,7 +44,7 @@ consent rate. That is the price of the promise on the tin and it is not up for o
 | **Name** | Handoffs |
 | **Definition** | A visit to `https://all-printable.com/` that continues to any `app.all-printable.com` URL. Counted **once per session, not per click** — a visitor who opens three category cards is one handoff. The rate form, handoffs ÷ home arrivals, is what should be watched; the count alone moves with traffic |
 | **Why it matters** | This site has no product of its own. Arrivals with no handoff mean it is found and not persuading; handoffs without arrivals mean the front door is not the route people take. Nothing else here distinguishes those two |
-| **Where to read it** | **Nowhere today — this is not instrumented.** Two candidate routes, and choosing between them is the first work this metric needs: (a) in GA4, sessions on the app host whose source is `all-printable.com`. Both hosts report to one property and no cross-domain linker or referral exclusion is configured, so a crossing *probably* records as a referral — **believed from reading the config, not established by a reading**; (b) a `click_out` event on this page's links, which does not exist. Proposed as [`all-printable-www#2`](https://github.com/ptk-studio/all-printable-www/issues/2) |
+| **Where to read it** | **Nowhere today — this is not instrumented.** Two candidate routes, and choosing between them is the first work this metric needs: (a) in GA4, sessions on the app host whose source is `all-printable.com`. Both hosts report to one property and no cross-domain linker or referral exclusion is configured, so a crossing *probably* records as a referral — **believed from reading the config, not established by a reading**; (b) a `click_out` event on this page's links, which does not exist. Proposed as [`all-printable-www#2`](https://github.com/ptk-studio/all-printable-www/issues/2). **Route (a) as stated does not measure this definition: it also counts the 40 stubs**, whose `location.replace` and `meta refresh` are navigations from this host, so a bounce arrives at the app as a referral from `all-printable.com` indistinguishable from a home-page handoff — and stub traffic is deliberately *not* a metric here (below). Separating the two — by the app-side landing path, or a hostname/path filter — is part of what #2 has to establish, and the question is [`#4`](https://github.com/ptk-studio/all-printable-www/issues/4). **Until it is, no route-(a) number is a handoff count** |
 | **Baseline** | **None.** Nothing has ever measured this |
 | **Target** | **Not set**, deliberately, until it has been read once. A target on a number nobody can read is a wish |
 | **Current** | **Never read** (as at 2026-09-04) |
@@ -54,7 +54,7 @@ consent rate. That is the price of the promise on the tin and it is not up for o
 | | |
 |---|---|
 | **Name** | Home arrivals |
-| **Definition** | GA4 `page_view` events carrying `maker = home`, from the host `all-printable.com`, per reporting day. **Consenting visitors only** |
+| **Definition** | GA4 `page_view` events carrying `maker = home`, from the host `all-printable.com`, per reporting day. **Consenting visitors only** — and precisely, **consent-granted page loads plus re-grants**, not visitors: one person who toggles usage stats off and on again through the privacy link fires a second event on the same arrival. Rare, and at this volume one afternoon of one person's fiddling is visible in the number |
 | **Why it matters** | It is the denominator of metric 1, and on its own it is the only signal this repo has that the search surface — the title, the description, the sitemap's single URL, the 40 stubs' canonicals — is doing anything |
 | **Where to read it** | Firebase console → Analytics, project `ptk-studio-allprintable`, events filtered to `maker = home`. **Needs a browser, so this is local-only work** — a cloud tick cannot take it |
 | **Baseline** | **Not read.** The instrumentation predates this declaration, so a first reading will be a history rather than a baseline — record the first one taken as the baseline, with its date, and say which days it covers |
@@ -71,10 +71,15 @@ DAU. Do not write "UTC day" here until that issue is answered.
 
 ## Deliberately not metrics
 
-- **Traffic through the 40 redirect stubs.** They carry no script and bounce the visitor in
+- **Traffic through the 40 redirect stubs.** They load no analytics — one inline
+  `location.replace` line and a `meta refresh`, nothing external — and they bounce the visitor in
   milliseconds; counting them would mean instrumenting pages whose whole job is not to be seen,
   and slowing the redirect to do it. Whether they still land correctly is a **check**, not a
   metric — it belongs in `PROJECT.md`'s verification.
+  **This exclusion is an intention, not yet a property of the measurement**: metric 1's route (a)
+  would count these bounces, because the redirect is a navigation from this host and reaches the
+  app as the same referral a real handoff does. Reconciling the two is
+  [`#4`](https://github.com/ptk-studio/all-printable-www/issues/4).
 - **Time on page, and bounce rate.** A front door works by being left quickly *in the right
   direction*. Optimising for a visitor who stays here is optimising against the product.
 - **The number of printables listed on the page.** That is the app's catalogue; its size is not
